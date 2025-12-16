@@ -17,11 +17,10 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # HANYA INI YANG BERUBAH DARI SEBELUMNYA
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # Kita hapus flutter-version biar dapat Flutter 3.29+ (Dart 3.7+)
+          # Tetap pakai versi terbaru (stable) biar Dart-nya cocok
 
       - name: Setup Rust & Android Targets
         run: |
@@ -36,7 +35,15 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter build apk --debug
+      # LANGKAH BARU (SOLUSI PERMISSION ERROR)
+      # Kita cari semua file .sh di folder pub-cache dan kasih izin eksekusi
+      - name: Fix Permissions for Cargokit
+        run: |
+          chmod -R +x ~/.pub-cache/hosted/pub.dev/cargokit-*/bin/ || true
+          find ~/.pub-cache/hosted/pub.dev/ -name "run_build_tool.sh" -exec chmod +x {} ;
+          
+      # Build APK dengan opsi verbose (-v) supaya kalau error ketahuan detailnya
+      - run: flutter build apk --debug -v
 
       - uses: actions/upload-artifact@v4
         with:
